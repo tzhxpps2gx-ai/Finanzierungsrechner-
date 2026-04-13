@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="440i Rechner">
+<title>BMW 440i — Finanzierung</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#080810;--surf:#0e0e1a;--card:#111120;--bord:#1d1d2e;
+  --blue:#1a7fe8;--grn:#15803d;--red:#dc2626;--yel:#b45309;
+  --tx:#eaeaf5;--mu:#58587a;--dim:#222234;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100vh;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;overscroll-behavior:none;-webkit-text-size-adjust:none}
+.wrap{max-width:440px;margin:0 auto;padding:0 14px calc(40px + var(--safe-bot))}
+
+/* ── Header ── */
+.hdr{background:var(--surf);border-bottom:1px solid var(--bord);
+  padding:calc(12px + var(--safe-top)) 16px 13px;
+  position:sticky;top:0;z-index:60}
+.hdr-row{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.bmw-ring{width:32px;height:32px;border:1.5px solid var(--blue);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bmw-ring span{font-size:6px;font-weight:800;color:var(--blue);letter-spacing:.5px}
+.hdr-title{font-size:15px;font-weight:700;line-height:1.1}
+.hdr-sub{font-size:9px;color:var(--mu);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--bord);border-radius:10px;overflow:hidden}
+.strip-cell{background:var(--card);padding:7px 8px;text-align:center}
+.strip-lbl{font-size:8px;color:var(--mu);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.strip-val{font-size:13px;font-weight:700;color:var(--blue)}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--bord);border-radius:14px;padding:18px 16px;margin-top:12px}
+.sec{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.sec-bar{width:3px;height:14px;border-radius:2px;flex-shrink:0}
+.sec-txt{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase}
+
+/* ── Sliders ── */
+.sw{margin-bottom:22px}
+.sw-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.sw-lbl{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--mu)}
+.sw-val{font-size:21px;font-weight:700}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;outline:none;cursor:pointer;display:block}
+input[type=range]:disabled{cursor:not-allowed}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--blue);border:2.5px solid #fff;box-shadow:0 2px 10px rgba(26,127,232,.45)}
+input[type=range]:disabled::-webkit-slider-thumb{background:var(--dim);border-color:var(--dim);box-shadow:none}
+.sw-range{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-top:4px}
+.sw-sub{font-size:10px;color:var(--mu);margin-top:0}
+
+/* ── Toggle ── */
+.tog{display:flex;background:var(--surf);border-radius:10px;border:1px solid var(--bord);padding:3px;gap:3px;margin-bottom:20px}
+.tog button{flex:1;padding:10px 6px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.tog button.on{background:var(--blue);color:#fff}
+.tog button:not(.on){background:transparent;color:var(--mu)}
+
+/* ── Quick buttons ── */
+.qb{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:-12px;margin-bottom:20px}
+.qb button{padding:8px 0;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;transition:all .12s;font-family:inherit}
+
+/* ── Info box ── */
+.ib{background:var(--surf);border-radius:10px;border:1px solid var(--bord);padding:11px 13px;font-size:11px;color:var(--mu);line-height:1.75;margin-bottom:4px}
+.ib strong{color:var(--tx)}
+
+/* ── Event chips ── */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;-ms-overflow-style:none;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:5px 10px;border-radius:20px;font-size:10px;font-weight:600;border:1px solid;white-space:nowrap}
+
+/* ── Sync button ── */
+.sync{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;margin-bottom:16px}
+.sync.on{background:var(--blue);color:#fff;border:1px solid var(--blue)}
+.sync.off{background:transparent;color:var(--blue);border:1px solid var(--blue)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ── Prognose box ── */
+.pbox{background:var(--surf);border-radius:12px;border:1px solid var(--bord);padding:14px;margin-top:12px}
+.prow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bord)}
+.prow:last-child{border-bottom:none}
+.pk{font-size:11px;color:var(--mu)}
+.pv{font-size:14px;font-weight:700}
+
+/* ── Chart legend ── */
+.cleg{display:flex;gap:14px;font-size:10px;color:var(--mu);margin-top:8px;flex-wrap:wrap}
+
+/* ── End overview ── */
+.estep{background:var(--card);border-radius:14px;padding:18px;border:1px solid var(--bord)}
+.eop{display:flex;align-items:center;gap:10px;padding:7px 16px}
+.eop-ln{flex:1;height:1px;background:var(--bord)}
+.eop-c{width:32px;height:32px;border-radius:50%;background:var(--card);border:1px solid var(--bord);
+  display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--mu);font-weight:700;flex-shrink:0}
+.elbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.eamt{font-size:36px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.eres{border-radius:14px;padding:22px 18px;position:relative;overflow:hidden}
+.ebar{position:absolute;top:0;left:0;right:0;height:4px}
+
+/* ── Stats grid ── */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.sg{background:var(--card);border-radius:12px;border:1px solid var(--bord);padding:13px 14px}
+.sg-lbl{font-size:9px;color:var(--mu);letter-spacing:.11em;text-transform:uppercase;margin-bottom:5px;line-height:1.4}
+.sg-val{font-size:17px;font-weight:700}
+
+/* ── Optimal sell indicator ── */
+.optsell{background:rgba(21,128,61,.07);border:1px solid rgba(21,128,61,.25);border-radius:12px;padding:13px 15px;margin-top:12px}
+.optsell-lbl{font-size:9px;color:var(--grn);letter-spacing:.15em;text-transform:uppercase;font-weight:600;margin-bottom:5px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-row">
+    <div class="bmw-ring"><span>BMW</span></div>
+    <div>
+      <div class="hdr-title">440i — Finanzierungsrechner</div>
+      <div class="hdr-sub">Ballonfinanzierung · Wertentwicklung · Verkauf</div>
+    </div>
+  </div>
+  <div class="strip">
+    <div class="strip-cell"><div class="strip-lbl">Darlehen</div><div class="strip-val" id="s-kp">—</div></div>
+    <div class="strip-cell"><div class="strip-lbl">Monatsrate</div><div class="strip-val" id="s-mr">—</div></div>
+    <div class="strip-cell"><div class="strip-lbl">Schlussrate</div><div class="strip-val" id="s-sr">—</div></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ─── FAHRZEUG & KREDIT ─── -->
+<div class="card">
+  <div class="sec"><div class="sec-bar" style="background:var(--blue)"></div><span class="sec-txt" style="color:var(--blue)">Fahrzeug &amp; Kredit</span></div>
+  <div class="sw">
+    <div class="sw-head"><span class="sw-lbl">Kaufpreis</span><span class="sw-val" id="v-kp"></span></div>
+    <input type="range" id="r-kp" min="30000" max="80000" step="500" value="50000">
+    <div class="sw-range"><span>30.000 €</span><span>80.000 €</span></div>
+  </div>
+  <div class="sw">
+    <div class="sw-head"><span class="sw-lbl">Zinssatz p.a.</span><span class="sw-val" id="v-zins"></span></div>
+    <input type="range" id="r-zins" min="2.0" max="12.0" step="0.1" value="6.9">
+    <div class="sw-range"><span>2,0 %</span><span>12,0 %</span></div>
+    <div class="sw-sub">Ø Autokredit Deutschland 2025: ~6,5–8,5 %</div>
+  </div>
+  <div class="sw" style="margin-bottom:0">
+    <div class="sw-head"><span class="sw-lbl">Laufzeit</span><span class="sw-val" id="v-lz"></span></div>
+    <input type="range" id="r-lz" min="24" max="84" step="6" value="60">
+    <div class="sw-range"><span>24 Mon.</span><span>84 Mon.</span></div>
+  </div>
+</div>
+
+<!-- ─── FINANZIERUNGSSTRUKTUR ─── -->
+<div class="card">
+  <div class="sec"><div class="sec-bar" style="background:var(--blue)"></div><span class="sec-txt" style="color:var(--blue)">Finanzierungsstruktur</span></div>
+  <div class="tog">
+    <button id="btn-rate" class="on" onclick="setMode('rate')">Rate festlegen</button>
+    <button id="btn-bal" onclick="setMode('balloon')">Schlussrate festlegen</button>
+  </div>
+  <div class="sw">
+    <div class="sw-head"><span class="sw-lbl">Monatsrate</span><span class="sw-val" id="v-mr"></span></div>
+    <input type="range" id="r-mr" min="300" max="1600" step="25" value="900">
+    <div class="sw-range"><span>300 €</span><span>1.600 €</span></div>
+  </div>
+  <div class="qb" id="qb"></div>
+  <div class="sw">
+    <div class="sw-head"><span class="sw-lbl">Schlussrate (Monat 60)</span><span class="sw-val" id="v-slr"></span></div>
+    <input type="range" id="r-slr" min="0" max="50000" step="500" value="0" disabled>
+    <div class="sw-range"><span>0 €</span><span id="slr-max">50.000 €</span></div>
+  </div>
+  <div class="ib" id="m1info"></div>
+</div>
+
+<!-- ─── WERTENTWICKLUNG ─── -->
+<div class="card">
+  <div class="sec"><div class="sec-bar" style="background:var(--yel)"></div><span class="sec-txt" style="color:var(--yel)">Wertentwicklung BMW 440i</span></div>
+  <div class="chips" id="chips"></div>
+  <div style="position:relative;height:210px"><canvas id="wChart"></canvas></div>
+  <div class="cleg">
+    <span style="color:var(--blue)">━ Historisch (DE-Markt)</span>
+    <span style="color:var(--blue);opacity:.5">╌ Prognose</span>
+    <span style="color:var(--red)">╌ Restschuld</span>
+    <span style="color:var(--yel)">╎ Verkauf</span>
+  </div>
+  <div class="pbox">
+    <div style="font-size:9px;color:var(--yel);letter-spacing:.16em;text-transform:uppercase;font-weight:600;margin-bottom:10px">
+      PROGNOSE · MONAT <span id="p-m"></span> · <span id="p-date"></span>
+    </div>
+    <div class="prow"><span class="pk">Erwarteter Fahrzeugwert</span><span class="pv" id="p-wert"></span></div>
+    <div class="prow"><span class="pk">Restschuld</span><span class="pv" style="color:var(--red)" id="p-rs"></span></div>
+    <div class="prow"><span class="pk">Wert − Restschuld</span><span class="pv" id="p-diff"></span></div>
+    <div class="prow"><span class="pk">Ø jährl. Wertverlust (Prognose)</span><span class="pv" style="color:var(--mu)" id="p-depr"></span></div>
+    <div class="prow" style="border-bottom:none"><span class="pk">Kumulierter Wertverlust ab Kauf</span><span class="pv" style="color:var(--mu)" id="p-cum"></span></div>
+  </div>
+  <div class="optsell" id="optsell-box">
+    <div class="optsell-lbl">✓ Empfohlenes Verkaufsfenster</div>
+    <div style="font-size:13px;color:var(--tx)" id="optsell-txt"></div>
+  </div>
+</div>
+
+<!-- ─── VORZEITIGER VERKAUF ─── -->
+<div class="card">
+  <div class="sec"><div class="sec-bar" style="background:var(--yel)"></div><span class="sec-txt" style="color:var(--yel)">Vorzeitiger Verkauf</span></div>
+  <button class="sync on" id="syncbtn" onclick="toggleSync()">
+    <span class="sync-dot"></span><span id="sync-lbl">Prognose übernommen</span>
+  </button>
+  <div class="sw">
+    <div class="sw-head"><span class="sw-lbl">Verkauf nach</span><span class="sw-val" id="v-vn"></span></div>
+    <input type="range" id="r-vn" min="6" max="60" step="1" value="36">
+    <div class="sw-range"><span>6 Mon.</span><span id="vn-max">60 Mon.</span></div>
+  </div>
+  <div class="sw" style="margin-bottom:0">
+    <div class="sw-head"><span class="sw-lbl">Verkaufspreis</span><span class="sw-val" id="v-vp"></span></div>
+    <input type="range" id="r-vp" min="10000" max="60000" step="500" value="27000">
+    <div class="sw-range"><span>10.000 €</span><span>60.000 €</span></div>
+  </div>
+</div>
+
+<!-- ─── RESTSCHULD-VERLAUF ─── -->
+<div class="card">
+  <div class="sec"><div class="sec-bar" style="background:var(--blue)"></div><span class="sec-txt" style="color:var(--blue)">Restschuld-Verlauf</span></div>
+  <div style="position:relative;height:165px"><canvas id="rsChart"></canvas></div>
+  <div class="cleg" style="margin-top:8px">
+    <span style="color:var(--blue)">━ Restschuld</span>
+    <span style="color:var(--yel)">╌ Verkauf M.<span id="rs-vn"></span></span>
+    <span style="color:var(--grn)">╌ Verkaufspreis</span>
+  </div>
+</div>
+
+<!-- ─── ENDÜBERSICHT ─── -->
+<div style="margin-top:20px">
+  <div style="text-align:center;font-size:10px;color:var(--mu);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px">
+    Endübersicht · Monat <span id="eu-m"></span>
+  </div>
+
+  <div class="estep">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="elbl" style="color:var(--grn)">Verkaufspreis</div>
+        <div class="eamt" style="color:var(--grn)" id="eu-vp"></div>
+      </div>
+      <div style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(21,128,61,.35);background:rgba(21,128,61,.07);display:flex;align-items:center;justify-content:center;font-size:20px">🚗</div>
+    </div>
+  </div>
+
+  <div class="eop"><div class="eop-ln"></div><div class="eop-c">−</div><div class="eop-ln"></div></div>
+
+  <div class="estep" style="border-color:rgba(220,38,38,.2)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div style="flex:1">
+        <div class="elbl" style="color:var(--red)">Restschuld · Monat <span id="eu-m2"></span></div>
+        <div class="eamt" style="color:var(--red)" id="eu-rs"></div>
+      </div>
+      <div style="width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(220,38,38,.3);background:rgba(220,38,38,.07);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏦</div>
+    </div>
+    <div class="ib" style="margin-top:14px;margin-bottom:0">
+      <strong>Wie wird die Restschuld berechnet?</strong><br>
+      RS(k) = PV·(1+r)ᵏ − Rate·[(1+r)ᵏ − 1] / r<br><br>
+      <span id="eu-fv"></span><br><br>
+      <em style="font-size:10px">Anfangs decken Raten v.a. Zinsen — Schuldenabbau beschleunigt sich mit der Zeit.</em>
+    </div>
+  </div>
+
+  <div class="eop"><div class="eop-ln"></div><div class="eop-c">=</div><div class="eop-ln"></div></div>
+
+  <div class="eres" id="eres">
+    <div class="ebar" id="ebar"></div>
+    <div style="padding-top:6px">
+      <div class="elbl" id="elbl"></div>
+      <div class="eamt" id="eamt"></div>
+      <div style="font-size:12px;color:var(--mu);margin-top:8px" id="esub"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── STATS GRID ─── -->
+<div class="sgrid">
+  <div class="sg"><div class="sg-lbl">Raten bis Verkauf</div><div class="sg-val" id="sg-paid"></div></div>
+  <div class="sg"><div class="sg-lbl">Schlussrate (entfällt)</div><div class="sg-val" style="color:var(--mu)" id="sg-sr"></div></div>
+  <div class="sg"><div class="sg-lbl">Gesamtzinsen (voll)</div><div class="sg-val" style="color:var(--red)" id="sg-gz"></div></div>
+  <div class="sg"><div class="sg-lbl">Netto-Kosten</div><div class="sg-val" id="sg-nk"></div></div>
+</div>
+
+<div style="text-align:center;font-size:10px;color:var(--dim);margin-top:20px;line-height:1.9;padding:0 6px">
+  Historische Preisdaten: pkw.de / AutoScout24 / mobile.de Marktberichte (2019–2026)<br>
+  BMW 440 (2018er): aktuell Ø €27.881, −11,58 % YoY (pkw.de, April 2026)<br>
+  Prognose basiert auf Markttrends: ICE-Druck (EU 2035), EZB-Zinspolitik, Normalisierung<br>
+  Alle Angaben ohne Gewähr · Keine Finanzberatung
+</div>
+
+<!-- Speicher-Hinweis -->
+<div style="background:rgba(26,127,232,.08);border:1px solid rgba(26,127,232,.25);border-radius:12px;padding:13px 15px;margin-top:16px;font-size:11px;color:var(--mu);line-height:1.7">
+  <strong style="color:var(--blue)">📲 Zum Homescreen speichern (iPhone):</strong><br>
+  Safari → Teilen-Symbol → „Zum Home-Bildschirm" → Hinzufügen.<br>
+  Öffnet dann als App, ohne Browser-Leiste.
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ════════════════════════════════════════════════════════
+//  FORMATTER
+// ════════════════════════════════════════════════════════
+const E = v => new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
+const P = v => v.toFixed(1).replace('.',',')+'\u202f%';
+
+// ════════════════════════════════════════════════════════
+//  FINANCE MATH
+// ════════════════════════════════════════════════════════
+function calcSR(PV,r,n,PMT){
+  if(r===0) return Math.max(0,PV-PMT*n);
+  return Math.max(0,(PV-PMT*(1-Math.pow(1+r,-n))/r)*Math.pow(1+r,n));
+}
+function calcPMT(PV,r,n,FV){
+  if(r===0) return (PV-FV)/n;
+  return (PV-FV/Math.pow(1+r,n))/((1-Math.pow(1+r,-n))/r);
+}
+function RS(PV,r,PMT,k){
+  if(r===0) return Math.max(0,PV-PMT*k);
+  return Math.max(0,PV*Math.pow(1+r,k)-PMT*(Math.pow(1+r,k)-1)/r);
+}
+
+// ════════════════════════════════════════════════════════
+//  VALUE DEVELOPMENT DATA
+//  BMW 440i / M440i Segment — Deutscher Gebrauchtwagenmarkt
+//  Relative zum Kaufpreis (April 2026 = 1.00)
+//  Quellen: pkw.de, AutoScout24, mobile.de Marktberichte,
+//           DAT Report 2020–2025, Carwow Analyse Jan 2026
+//
+//  Realwert bei Kauf €50.000:
+//  BMW 440 (2018) aktuell Ø €27.881 / YoY -11,58% (pkw.de Apr 2026)
+//  2022er Modell im aktuellen Markt ~€40-50k (AutoScout24 Apr 2026)
+// ════════════════════════════════════════════════════════
+
+// Key historical price points [Jahr, Monat, RelFaktor]
+// April 2026 = 1.00 = Kaufpreis
+const HIST = [
+  [2019,9, 1.48],  // Referenzfahrzeug nahezu neu / sehr geringer KM-Stand
+  [2020,1, 1.42],  // Normaler Markt, pre-COVID
+  [2020,4, 1.31],  // COVID-Lockdown: Nachfrage bricht ein (-8%)
+  [2020,8, 1.35],  // COVID-Erholung + Halbleitermangel beginnt
+  [2021,2, 1.41],  // Halbleitermangel verschärft sich
+  [2021,7, 1.52],  // Gebrauchtwagen-Boom — Lieferverzögerungen Neuwagen
+  [2021,12,1.57],  // Preishoch: gebrauchte Premiums fast auf Neuwagenpreis
+  [2022,5, 1.61],  // ABSOLUTES HOCH — DAT Report: +25% vs. 2020
+  [2022,9, 1.50],  // EZB hebt Zinsen auf 1,25% → Nachfrage kühlt ab
+  [2022,12,1.39],  // Normalisierung beschleunigt sich
+  [2023,4, 1.29],  // EU ICE-Verbot 2035 bestätigt → strukturelle Preisdämpfung
+  [2023,8, 1.21],  // mobile.de: Gebrauchtpreise -8% YoY
+  [2023,12,1.14],
+  [2024,4, 1.08],  // AutoScout24: Premium-Sportcoupes -10% YoY
+  [2024,8, 1.04],  // Stagnation auf erhöhtem Niveau
+  [2024,12,1.01],  // pkw.de BMW 440 (2018): -11,58% YoY → ~€27.881
+  [2025,4, 0.99],
+  [2025,8, 0.99],  // Leichte Stabilisierung: Sportmodelle zeigen Resilienz
+  [2025,12,1.00],
+  [2026,4, 1.00],  // ← KAUF (= Kaufpreis × 1.00)
+];
+
+// Wichtige Marktereignisse
+const EVENTS = [
+  {y:2020,m:4,  lbl:'COVID-19',         col:'#ef4444'},
+  {y:2021,m:7,  lbl:'Chip-Mangel',      col:'#f59e0b'},
+  {y:2022,m:5,  lbl:'Preishoch',        col:'#22c55e'},
+  {y:2022,m:9,  lbl:'EZB Zinsen ↑',    col:'#ef4444'},
+  {y:2023,m:4,  lbl:'EU ICE-Verbot',   col:'#f59e0b'},
+  {y:2026,m:4,  lbl:'Dein Kauf',        col:'#1a7fe8'},
+];
+
+// Jährliche Wertverlustrate ab Kauf (Prognose)
+// Basis: pkw.de -11,58% YoY für BMW 440 2018er
+// Anpassung: neuere Modelle verlieren anfangs weniger,
+//            zunehmender ICE-Druck ab 2027-2028
+const DEPR_RATES = [0.09, 0.10, 0.10, 0.09, 0.08, 0.08];
+
+function projVal(kauf, months){
+  let v = kauf;
+  for(let m=0;m<months;m++){
+    const yr = Math.min(Math.floor(m/12), DEPR_RATES.length-1);
+    v *= Math.pow(1 - DEPR_RATES[yr], 1/12);
+  }
+  return Math.max(0, v);
+}
+
+// Interpolate historical factor at fractional year
+function histFactor(yr, mo){
+  const t = yr + (mo-1)/12;
+  const pts = HIST.map(([y,m,v])=>({t:y+(m-1)/12,v}));
+  if(t <= pts[0].t) return pts[0].v;
+  if(t >= pts[pts.length-1].t) return pts[pts.length-1].v;
+  for(let i=1;i<pts.length;i++){
+    if(t >= pts[i-1].t && t <= pts[i].t){
+      const f=(t-pts[i-1].t)/(pts[i].t-pts[i-1].t);
+      return pts[i-1].v + (pts[i].v-pts[i-1].v)*f;
+    }
+  }
+  return 1;
+}
+
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+const S = {
+  kp:50000, zins:6.9, lz:60,
+  mode:'rate', rate:900, bal:null,
+  vn:36, vp:null,   // vp null = auto-sync
+  sync:true,
+};
+
+// ════════════════════════════════════════════════════════
+//  DERIVED
+// ════════════════════════════════════════════════════════
+function derive(){
+  const r = S.zins/100/12, n = S.lz;
+  const sr  = S.mode==='rate' ? calcSR(S.kp,r,n,S.rate) : (S.bal ?? calcSR(S.kp,r,n,S.rate));
+  const mr  = S.mode==='rate' ? S.rate : (S.bal!=null ? calcPMT(S.kp,r,n,S.bal) : S.rate);
+  const vp  = S.sync ? Math.round(projVal(S.kp,S.vn)/500)*500 : (S.vp ?? Math.round(projVal(S.kp,S.vn)/500)*500);
+  const rs  = RS(S.kp,r,mr,S.vn);
+  const diff= vp - rs;
+  const paid= mr * S.vn;
+  const gz  = mr*n + sr - S.kp;
+  const z1  = S.kp*r, t1 = Math.max(0,mr-z1);
+  // Build RS amortization array
+  const rsd=[];let b=S.kp;
+  for(let k=0;k<=n;k++){rsd.push(Math.round(Math.max(0,b)));if(k<n){const z=b*r;b-=(mr-z);}}
+  // Optimal sell: month where (projVal - RS) is maximized
+  let bestM=6,bestGap=-Infinity;
+  for(let m=6;m<=n;m++){
+    const gap=projVal(S.kp,m)-RS(S.kp,r,mr,m);
+    if(gap>bestGap){bestGap=gap;bestM=m;}
+  }
+  return {r,n,sr,mr,vp,rs,diff,paid,gz,z1,t1,rsd,bestM,bestGap};
+}
+
+// ════════════════════════════════════════════════════════
+//  CHART INSTANCES
+// ════════════════════════════════════════════════════════
+let wC=null, rsC=null;
+
+function buildWertChart(d){
+  const ctx=document.getElementById('wChart').getContext('2d');
+
+  // Build labels: every 2 months from Sep 2019 to (Apr 2026 + lz months)
+  const STEP=2;
+  const labels=[],histData=[],projData=[],rsData=[];
+
+  // Historical: Sep 2019 → Apr 2026 (79 months)
+  const histEnd = 2026+(4-1)/12; // Apr 2026
+  let mo=0;
+  for(let t=2019+(9-1)/12; t<=histEnd+0.01; t+=STEP/12,mo++){
+    const yr=Math.floor(t), m=Math.round((t-yr)*12)+1;
+    labels.push(yr*100+m); // numeric key: YYYYMM
+    histData.push(Math.round(histFactor(yr,m)*S.kp));
+    projData.push(null);
+    rsData.push(null);
+  }
+  // Set purchase point as bridge
+  const bridge = Math.round(S.kp);
+  histData[histData.length-1] = bridge;
+  projData[projData.length-1] = bridge;
+  rsData[rsData.length-1]     = Math.round(S.kp); // full loan at purchase
+
+  // Future: Apr 2026 + STEP → Apr 2026 + lz months
+  for(let m=STEP; m<=S.lz; m+=STEP){
+    const t=2026+(4-1+m)/12;
+    const yr=Math.floor(t), mo2=Math.round((t-yr)*12)+1;
+    labels.push(yr*100+mo2);
+    histData.push(null);
+    projData.push(Math.round(projVal(S.kp,m)));
+    rsData.push(Math.round(RS(S.kp,d.r,d.mr,m)));
+  }
+
+  // Convert labels to display strings
+  const dispLabels = labels.map(k=>{
+    const yr=Math.floor(k/100), mm=k%100;
+    return yr+'/'+(mm<10?'0'+mm:mm);
+  });
+
+  // Event & sell X positions
+  function getX(ey,em){
+    const key=ey*100+em;
+    const idx=labels.indexOf(key);
+    if(idx>=0) return idx;
+    // find nearest
+    let best=0,bestD=999;
+    labels.forEach((l,i)=>{const d=Math.abs(l-key);if(d<bestD){bestD=d;best=i;}});
+    return best;
+  }
+
+  if(wC) wC.destroy();
+
+  wC = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:dispLabels,
+      datasets:[
+        {label:'Historisch',data:histData,borderColor:'#1a7fe8',
+          backgroundColor:'rgba(26,127,232,0.07)',borderWidth:2,
+          pointRadius:0,fill:true,tension:0.35,spanGaps:true},
+        {label:'Prognose',data:projData,borderColor:'#1a7fe8',
+          backgroundColor:'rgba(26,127,232,0.04)',borderWidth:2,
+          borderDash:[5,3],pointRadius:0,fill:true,tension:0.3,spanGaps:true},
+        {label:'Restschuld',data:rsData,borderColor:'#dc2626',
+          backgroundColor:'transparent',borderWidth:1.5,
+          borderDash:[4,3],pointRadius:0,fill:false,tension:0.1,spanGaps:true},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      animation:{duration:350},
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#0e0e1a',borderColor:'#1d1d2e',borderWidth:1,
+          titleColor:'#58587a',bodyColor:'#eaeaf5',
+          titleFont:{size:10},bodyFont:{size:12,weight:'bold'},
+          callbacks:{
+            title:items=>items[0].label,
+            label:item=>item.raw!=null?`${item.dataset.label}: ${E(item.raw)}`:''
+          }
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#58587a',font:{size:9},maxTicksLimit:7,
+            callback(v,i){
+              const lbl=this.getLabelForValue(v);
+              if(lbl&&(lbl.endsWith('/01')||lbl.endsWith('/04')||lbl.endsWith('/07')||lbl.endsWith('/10'))){
+                if(lbl.endsWith('/01')) return lbl.substring(0,4);
+              }
+              return '';
+            }
+          },grid:{color:'#1d1d2e'},border:{display:false}},
+        y:{ticks:{color:'#58587a',font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k`},
+          grid:{color:'#1d1d2e'},border:{display:false}}
+      }
+    },
+    plugins:[{
+      id:'evLines',
+      afterDraw(chart){
+        const {ctx,scales,data}=chart;
+        // Event vertical lines
+        EVENTS.forEach(ev=>{
+          const xi=getX(ev.y,ev.m);
+          const x=scales.x.getPixelForValue(xi);
+          ctx.save();ctx.setLineDash([2,3]);
+          ctx.strokeStyle=ev.col+'88';ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(x,scales.y.top);ctx.lineTo(x,scales.y.bottom);ctx.stroke();
+          ctx.restore();
+        });
+        // Sell month vertical line
+        const sellIdx = getX(2026, 4) + Math.ceil(S.vn/STEP);
+        const sx=scales.x.getPixelForValue(Math.min(sellIdx,data.labels.length-1));
+        ctx.save();ctx.setLineDash([3,2]);
+        ctx.strokeStyle='#b4530999';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(sx,scales.y.top);ctx.lineTo(sx,scales.y.bottom);ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+function buildRsChart(d){
+  const ctx=document.getElementById('rsChart').getContext('2d');
+  const vp=S.sync?d.vp:(S.vp??d.vp);
+  if(rsC) rsC.destroy();
+  rsC = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:Array.from({length:S.lz+1},(_,i)=>i),
+      datasets:[
+        {label:'Restschuld',data:d.rsd,borderColor:'#1a7fe8',
+          backgroundColor:'rgba(26,127,232,0.1)',borderWidth:2,pointRadius:0,fill:true,tension:0.2},
+        {label:'Verkaufspreis',data:new Array(S.lz+1).fill(vp),
+          borderColor:'#15803d',backgroundColor:'transparent',
+          borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:300},
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#0e0e1a',borderColor:'#1d1d2e',borderWidth:1,
+        titleColor:'#58587a',bodyColor:'#eaeaf5',
+        titleFont:{size:10},bodyFont:{size:12,weight:'bold'},
+        callbacks:{title:i=>'Monat '+i[0].label,label:i=>`${i.dataset.label}: ${E(i.raw)}`}
+      }},
+      scales:{
+        x:{ticks:{color:'#58587a',font:{size:9},maxTicksLimit:7,callback:v=>v%12===0?`M.${v}`:''},
+          grid:{color:'#1d1d2e'},border:{display:false}},
+        y:{ticks:{color:'#58587a',font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k`},
+          grid:{color:'#1d1d2e'},border:{display:false}}
+      }
+    },
+    plugins:[{
+      id:'vline',
+      afterDraw(chart){
+        const {ctx,scales}=chart;
+        const x=scales.x.getPixelForValue(S.vn);
+        ctx.save();ctx.setLineDash([4,3]);
+        ctx.strokeStyle='#b4530999';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(x,scales.y.top);ctx.lineTo(x,scales.y.bottom);ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  SLIDER GRADIENT HELPER
+// ════════════════════════════════════════════════════════
+function sg(el){
+  if(el.disabled){el.style.background='var(--dim)';return;}
+  const f=((+el.value-+el.min)/(+el.max-+el.min))*100;
+  el.style.background=`linear-gradient(to right,var(--blue) ${f}%,var(--bord) ${f}%)`;
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════
+function monthToDate(m){
+  const yr=2026+Math.floor((3+m)/12), mo=((3+m)%12)+1;
+  const names=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  return names[mo-1]+' '+yr;
+}
+
+let chartTimer=null;
+function render(){
+  const d=derive();
+  const vp=d.vp;
+  const profit=d.diff>=0;
+  const mc=profit?'var(--grn)':'var(--red)';
+
+  // ── Strip
+  document.getElementById('s-kp').textContent=E(S.kp);
+  document.getElementById('s-mr').textContent=E(Math.round(d.mr));
+  document.getElementById('s-sr').textContent=E(Math.round(d.sr));
+
+  // ── Kredit sliders
+  document.getElementById('v-kp').textContent=E(S.kp);
+  document.getElementById('v-zins').textContent=P(S.zins);
+  document.getElementById('v-lz').textContent=S.lz+' Mon.';
+  document.getElementById('r-kp').value=S.kp;
+  document.getElementById('r-zins').value=S.zins;
+  document.getElementById('r-lz').value=S.lz;
+  ['r-kp','r-zins','r-lz'].forEach(id=>sg(document.getElementById(id)));
+
+  // ── Mode
+  document.getElementById('btn-rate').className=S.mode==='rate'?'on':'';
+  document.getElementById('btn-bal').className=S.mode==='balloon'?'on':'';
+  const mrEl=document.getElementById('r-mr'), slrEl=document.getElementById('r-slr');
+  mrEl.disabled=S.mode==='balloon'; slrEl.disabled=S.mode==='rate';
+  mrEl.style.opacity=S.mode==='balloon'?'0.3':'1';
+  slrEl.style.opacity=S.mode==='rate'?'0.3':'1';
+  document.getElementById('v-mr').textContent=E(Math.round(d.mr));
+  document.getElementById('v-slr').textContent=E(Math.round(d.sr));
+  mrEl.value=Math.round(d.mr); slrEl.value=Math.round(d.sr);
+  slrEl.max=S.kp; document.getElementById('slr-max').textContent=E(S.kp);
+  sg(mrEl); sg(slrEl);
+
+  // ── Quick buttons
+  document.getElementById('qb').innerHTML=[700,800,900,1000,1100,1200].map(v=>`
+    <button onclick="setRate(${v})" style="padding:8px 0;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;
+      border:1px solid ${Math.round(d.mr)===v?'var(--blue)':'var(--bord)'};
+      background:${Math.round(d.mr)===v?'rgba(26,127,232,.15)':'transparent'};
+      color:${Math.round(d.mr)===v?'var(--blue)':'var(--mu)'}">${v}</button>`).join('');
+
+  // ── Monat 1 info
+  document.getElementById('m1info').innerHTML=`<strong>Monat 1:</strong> Zinsen ${E(d.z1)} · Tilgung ${E(d.t1)}`;
+
+  // ── Event chips
+  document.getElementById('chips').innerHTML=EVENTS.map(ev=>`
+    <div class="chip" style="color:${ev.col};border-color:${ev.col}44;background:${ev.col}12">
+      ${ev.lbl} ${ev.y}
+    </div>`).join('');
+
+  // ── Prognose box
+  const pw=projVal(S.kp,S.vn);
+  const pDiff=pw-d.rs;
+  document.getElementById('p-m').textContent=S.vn;
+  document.getElementById('p-date').textContent=monthToDate(S.vn);
+  document.getElementById('p-wert').textContent=E(pw);
+  document.getElementById('p-rs').textContent=E(d.rs);
+  const pdEl=document.getElementById('p-diff');
+  pdEl.textContent=E(pDiff); pdEl.style.color=pDiff>=0?'var(--grn)':'var(--red)';
+  document.getElementById('p-depr').textContent=`~${(DEPR_RATES[Math.min(Math.floor(S.vn/12),DEPR_RATES.length-1)]*100).toFixed(0)}\u202f% p.a.`;
+  document.getElementById('p-cum').textContent=E(S.kp-pw)+` (${(((S.kp-pw)/S.kp)*100).toFixed(1)}%)`;
+
+  // ── Optimal sell
+  const ob=document.getElementById('optsell-box');
+  const ot=document.getElementById('optsell-txt');
+  if(d.bestGap>0){
+    ob.style.display='block';
+    ot.textContent=`Monat ${d.bestM} · ${monthToDate(d.bestM)} · Gewinn ≈ ${E(d.bestGap)}`;
+  } else { ob.style.display='none'; }
+
+  // ── Sync button
+  const sb=document.getElementById('syncbtn');
+  sb.className='sync '+(S.sync?'on':'off');
+  document.getElementById('sync-lbl').textContent=S.sync?'Prognose übernommen':'Prognose übernehmen';
+
+  // ── Verkauf sliders
+  document.getElementById('v-vn').textContent=S.vn+' Mon.';
+  document.getElementById('v-vp').textContent=E(vp);
+  document.getElementById('r-vn').max=S.lz; document.getElementById('vn-max').textContent=S.lz+' Mon.';
+  document.getElementById('r-vn').value=S.vn;
+  document.getElementById('r-vp').value=vp;
+  document.getElementById('rs-vn').textContent=S.vn;
+  sg(document.getElementById('r-vn')); sg(document.getElementById('r-vp'));
+
+  // ── End overview
+  document.getElementById('eu-m').textContent=S.vn;
+  document.getElementById('eu-m2').textContent=S.vn;
+  document.getElementById('eu-vp').textContent=E(vp);
+  document.getElementById('eu-rs').textContent=E(d.rs);
+  document.getElementById('eu-fv').innerHTML=
+    `PV = ${E(S.kp)} · r = ${(S.zins/12).toFixed(3).replace('.',',')}% Mon. · k = ${S.vn} · Rate = ${E(d.mr)}`;
+
+  const resc=document.getElementById('eres');
+  resc.style.background=profit?'rgba(21,128,61,.06)':'rgba(220,38,38,.06)';
+  resc.style.border=`1px solid ${profit?'rgba(21,128,61,.25)':'rgba(220,38,38,.25)'}`;
+  document.getElementById('ebar').style.background=
+    `linear-gradient(to right,${profit?'#15803d':'#dc2626'},${profit?'#15803d55':'#dc262655'})`;
+  document.getElementById('elbl').textContent=profit?'✓  Du behältst':'⚠  Du schuldest der Bank noch';
+  document.getElementById('elbl').style.color=mc;
+  document.getElementById('eamt').textContent=E(Math.abs(d.diff));
+  document.getElementById('eamt').style.color=mc;
+  document.getElementById('esub').textContent=`${E(vp)} − ${E(d.rs)} = ${profit?'Gewinn':'Fehlbetrag'}`;
+
+  // ── Stats
+  document.getElementById('sg-paid').textContent=E(d.paid);
+  document.getElementById('sg-sr').textContent=E(Math.round(d.sr));
+  document.getElementById('sg-gz').textContent=E(Math.max(0,d.gz));
+  const nkEl=document.getElementById('sg-nk');
+  const nk=d.paid+d.rs-vp;
+  nkEl.textContent=E(nk); nkEl.style.color=nk<=0?'var(--grn)':'var(--red)';
+
+  // ── Charts (debounced)
+  clearTimeout(chartTimer);
+  chartTimer=setTimeout(()=>{ buildWertChart(d); buildRsChart(d); },100);
+}
+
+// ════════════════════════════════════════════════════════
+//  ACTIONS
+// ════════════════════════════════════════════════════════
+function setMode(m){
+  if(m==='balloon'&&S.bal==null){ const d=derive(); S.bal=Math.round(d.sr/500)*500; }
+  S.mode=m; render();
+}
+function setRate(v){ S.rate=v; render(); }
+function toggleSync(){
+  S.sync=!S.sync;
+  if(!S.sync){ const d=derive(); S.vp=d.vp; }
+  render();
+}
+
+// ════════════════════════════════════════════════════════
+//  WIRE SLIDERS
+// ════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  const wire=(id,fn)=>{
+    const el=document.getElementById(id);
+    el.addEventListener('input',e=>{fn(+e.target.value);render();});
+  };
+  wire('r-kp', v=>{ S.kp=v; });
+  wire('r-zins',v=>{ S.zins=v; });
+  wire('r-lz',  v=>{ S.lz=v; if(S.vn>v) S.vn=v; });
+  wire('r-mr',  v=>{ if(S.mode==='rate') S.rate=v; });
+  wire('r-slr', v=>{ if(S.mode==='balloon') S.bal=v; });
+  wire('r-vn',  v=>{ S.vn=v; if(S.sync){/* auto-updates */} });
+  wire('r-vp',  v=>{ S.vp=v; S.sync=false; render(); });
+
+  render();
+});
+</script>
+</body>
+</html>
